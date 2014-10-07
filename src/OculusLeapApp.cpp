@@ -36,7 +36,7 @@ static const string GLSL_FRAG_IMGPROC = STRINGIFY(
       if(indexIntoRawData.r > 0.0 && indexIntoRawData.r < 1.0
          && indexIntoRawData.g > 0.0 && indexIntoRawData.g < 1.0)
       {
-          gl_FragColor = texture2D(rawData, vec2(indexIntoRawData.r,1.0 - indexIntoRawData.g));
+          gl_FragColor = texture2D(rawData, vec2(indexIntoRawData.r,1.0 -indexIntoRawData.g));
       } else {
           gl_FragColor = vec4(0.0, 0, 0, 1.0);
       }
@@ -67,7 +67,7 @@ void OculusLeapApp::setup()
     
     Controller::PolicyFlag addImagePolicy = (Controller::PolicyFlag)
     (Controller::POLICY_IMAGES |
-     Controller::POLICY_OPTIMIZE_HMD |
+//     Controller::POLICY_OPTIMIZE_HMD |
      mLeapController.policyFlags()
     );
     mLeapController.setPolicyFlags(addImagePolicy);
@@ -105,9 +105,9 @@ void OculusLeapApp::update()
                 mDistortionSurface = Surface32f(images[0].distortionWidth(), images[0].distortionHeight(), false);
             }
             
-            for(int i = 0; i < mLeapFrame.images().count(); i++)
-            {
-                Image image = images[i];
+//            for(int i = 0; i < 1; i++)
+//            {
+                Image image = images[0];
                 
                 const unsigned char* image_buffer = image.data();
                 
@@ -144,17 +144,17 @@ void OculusLeapApp::update()
                 gl::Texture distortionTexture(distortion, textureFormat);
                 distortionTexture.bind(1);
                 
-                if(i)
-                {
+//                if(i)
+//                {
                     mLeapDist1.update(distortion);
                     mLeapImage1.update(surface);
-                }
-                else
-                {
-                    mLeapDist2.update(distortion);
-                    mLeapImage2.update(surface);
-                }
-            }
+//                }
+//                else
+//                {
+//                    mLeapDist2.update(distortion);
+//                    mLeapImage2.update(surface);
+//                }
+//            }
         }
         
     }
@@ -191,18 +191,41 @@ void OculusLeapApp::draw()
     //get fingers
     if(mLeapFrame.fingers().count() > 0)
     {
+        HandList hands = mLeapFrame.hands();
+        
+        console() << "hand: \n";
+        
+        gl::pushMatrices();
+        
+        //center on screen
+        gl::translate(getWindowWidth()/2, getWindowHeight()/2);
+        
+        for(HandList::const_iterator hl = hands.begin(); hl != hands.end(); hl++)
+        {
+            Vector pos = (*hl).stabilizedPalmPosition();
+            
+            console() << "===palm : " << pos << "\n";
+            
+            gl::color(1.0, 0.0, 0.0);
+            gl::drawSphere(Vec3f(-1 * pos.x,pos.z, -1 * pos.y), 20);
+        }
+        
         FingerList fingers = mLeapFrame.fingers();
+        
         
         for(FingerList::const_iterator fl = fingers.begin(); fl != fingers.end(); fl++)
         {
-            gl::pushMatrices();
+            Vector tip = (*fl).stabilizedTipPosition();
             
-            Vector tip = (*fl).tipPosition();
+            console() << "---tip : " << tip << "\n";
             
-            gl::drawSphere(Vec3f(tip.x, tip.y, tip.z), 10);
-            
-            gl::popMatrices();
+            gl::color(1.0, 1.0, 1.0);
+            gl::drawSphere(Vec3f(-1 * tip.x,tip.z, -1 * tip.y), 10);
         }
+        
+        gl::popMatrices();
+        
+        console() << endl;
     }
 }
 
